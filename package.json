@@ -7,6 +7,7 @@
     "infra:plan": "bun alchemy plan --stage dev",
     "infra:dev": "bun alchemy dev --stage dev",
     "infra:deploy": "bun alchemy deploy --stage dev",
+    "typecheck": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,5 +19,9 @@
     "@effect/platform-node": "rc",
     "alchemy": "^2.0.0-beta.79",
     "effect": "rc"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260923.1",
+    "typescript": "^7.0.2"
   }
 }
