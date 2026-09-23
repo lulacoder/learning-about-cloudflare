@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Alchemy local state and credentials
+.alchemy/
+
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+
+# Logs and runtime output
+*.log
+coverage/
+dist/
+build/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+.idea/
