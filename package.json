@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "infra:plan": "bun alchemy plan --stage dev",
+    "infra:dev": "bun alchemy dev --stage dev",
+    "infra:deploy": "bun alchemy deploy --stage dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
