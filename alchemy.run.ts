@@ -2,13 +2,16 @@ import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as State from "alchemy/State";
 import * as Effect from "effect/Effect";
+import * as Config from "effect/Config";
 
 export const worker = Cloudflare.Worker("ChatWorker", {
   main: "./src/worker.ts",
   env: {
-    CHATS: Cloudflare.DurableObject<import("./src/worker.ts").ChatStore>(
+    CHATS: Cloudflare.DurableObject<import("./src/chat-store.ts").ChatStore>(
       "ChatStore",
     ),
+    AI: Cloudflare.Workers.AI(),
+    CHAT_API_TOKEN: Config.Redacted("CHAT_API_TOKEN"),
   },
   dev: { port: 8787 },
 });
