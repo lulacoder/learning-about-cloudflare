@@ -15,6 +15,7 @@ node_modules/
 coverage/
 dist/
 build/
+web/src/routeTree.gen.ts
 
 # Operating system files
 .DS_Store
