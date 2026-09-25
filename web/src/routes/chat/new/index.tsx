@@ -3,18 +3,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Aperture, ArrowLeft, RotateCw } from "lucide-react";
 import { useState } from "react";
 import { createChat, type Chat, type Message } from "../../../api";
-import { useAuth } from "../../../auth";
 import { ChatComposer } from "../../../chat-composer";
 
 export const Route = createFileRoute("/chat/new/")({ component: NewChatPage });
 
 function NewChatPage() {
-  const { token } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
   const create = useMutation({
-    mutationFn: (content: string) => createChat(token, content),
+    mutationFn: createChat,
     onSuccess: ({ chat, user, assistant }) => {
       queryClient.setQueryData<Chat[]>(["chats"], (current = []) => [chat, ...current]);
       queryClient.setQueryData<Message[]>(["messages", chat.id], assistant ? [user, assistant] : [user]);

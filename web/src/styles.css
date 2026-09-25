@@ -57,12 +57,16 @@ a { color: inherit; text-decoration: none; }
 .connect-card h2 { margin: 0; font: 400 42px/1 "Instrument Serif", Georgia, serif; letter-spacing: -.03em; }
 .card-description { margin: 13px 0 29px; color: #758177; font-size: 14px; line-height: 1.6; }
 .connect-card label { display: block; margin-bottom: 9px; font-size: 12px; font-weight: 600; color: #3e5848; }
+.connect-card label:not(:first-of-type) { margin-top: 17px; }
 .connect-card input { width: 100%; height: 48px; border: 1px solid #d6decf; border-radius: 4px; padding: 0 14px; color: #243a2c; background: #fff; outline: 0; }
 .connect-card input:focus { border-color: #668c69; box-shadow: 0 0 0 3px #dce9d8; }
 .connect-card input::placeholder { color: #a0aaa0; }
 .connect-button { width: 100%; margin-top: 18px; }
 .connect-help { margin: 22px 0 0; color: #879087; font-size: 11px; line-height: 1.65; }
 .connect-help code { color: #44624c; }
+.auth-switch { margin: 24px 0 0; color: #758177; font-size: 12px; text-align: center; }
+.auth-switch a { color: #315e44; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.auth-loading { display: grid; place-items: center; min-height: 100vh; color: #617c68; background: #f4f1e9; font-size: 13px; }
 .connect-bottom { border-top: 1px solid #e2e2d9; }
 
 /* App shell */

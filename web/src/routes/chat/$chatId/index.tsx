@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Aperture, ArrowLeft, MessageCircle, RotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ApiError, chatSocket, listChats, listMessages, sendMessage, type Chat, type Message } from "../../../api";
-import { useAuth } from "../../../auth";
 import { ChatComposer } from "../../../chat-composer";
 
 export const Route = createFileRoute("/chat/$chatId/")({ component: ChatPage });
@@ -15,20 +14,19 @@ function addMessage(current: Message[] = [], message: Message): Message[] {
 
 function ChatPage() {
   const { chatId } = Route.useParams();
-  const { token } = useAuth();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
   const [socketStatus, setSocketStatus] = useState<"connecting" | "live" | "offline">("connecting");
   const [notice, setNotice] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
-  const chats = useQuery({ queryKey: ["chats"], queryFn: () => listChats(token) });
+  const chats = useQuery({ queryKey: ["chats"], queryFn: listChats });
   const chat = chats.data?.find((item: Chat) => item.id === chatId);
   const messages = useQuery({
     queryKey: ["messages", chatId],
-    queryFn: () => listMessages(token, chatId),
+    queryFn: () => listMessages(chatId),
   });
   const send = useMutation({
-    mutationFn: (content: string) => sendMessage(token, chatId, content),
+    mutationFn: (content: string) => sendMessage(chatId, content),
     onSuccess: ({ user, assistant }) => {
       queryClient.setQueryData<Message[]>(["messages", chatId], (current) =>
         addMessage(addMessage(current, user), assistant),
@@ -60,7 +58,7 @@ function ChatPage() {
 
     function connect() {
       setSocketStatus("connecting");
-      socket = chatSocket(token, chatId);
+      socket = chatSocket(chatId);
       socket.addEventListener("open", () => {
         if (!active) return;
         setSocketStatus("live");
@@ -71,10 +69,7 @@ function ChatPage() {
         try {
           const data: unknown = JSON.parse(String(event.data));
           if (typeof data !== "object" || data === null || !("type" in data)) return;
-          if (data.type === "message" && "message" in data) {
-            const message = data.message as Message;
-            queryClient.setQueryData<Message[]>(["messages", chatId], (current) => addMessage(current, message));
-          }
+          if (data.type === "message") void queryClient.invalidateQueries({ queryKey: ["messages", chatId] });
           if (data.type === "assistant_error") setNotice("The assistant could not reply. Your message is saved.");
         } catch { /* Ignore malformed socket events. */ }
       });
@@ -91,7 +86,7 @@ function ChatPage() {
       clearTimeout(timer);
       socket?.close();
     };
-  }, [chatId, token, queryClient]);
+  }, [chatId, queryClient]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.data?.length, send.isPending]);
 

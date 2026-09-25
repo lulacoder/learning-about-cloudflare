@@ -6,12 +6,22 @@ import * as Config from "effect/Config";
 
 export const worker = Cloudflare.Worker("ChatWorker", {
   main: "./src/worker.ts",
+  compatibility: { flags: ["nodejs_compat"] },
+  assets: {
+    directory: "./web/dist",
+    notFoundHandling: "single-page-application",
+    runWorkerFirst: ["/api/*", "/health"],
+  },
   env: {
     CHATS: Cloudflare.DurableObject<import("./src/chat-store.ts").ChatStore>(
       "ChatStore",
     ),
     AI: Cloudflare.Workers.AI(),
-    CHAT_API_TOKEN: Config.Redacted("CHAT_API_TOKEN"),
+    AUTH_DB: Cloudflare.D1.Database("AuthDb", {
+      migrations: "./migrations/auth",
+    }),
+    BETTER_AUTH_SECRET: Config.Redacted("BETTER_AUTH_SECRET"),
+    BETTER_AUTH_URL: Config.String("BETTER_AUTH_URL"),
   },
   dev: { port: 8787 },
 });
