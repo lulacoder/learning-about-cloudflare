@@ -1,6 +1,6 @@
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
-const MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8";
+const MODEL = "@cf/zai-org/glm-4.7-flash";
 const MAX_CONTEXT_CHARS = 12_000;
 
 export async function generateReply(ai: Ai, history: ChatTurn[]): Promise<string> {
@@ -19,17 +19,12 @@ export async function generateReply(ai: Ai, history: ChatTurn[]): Promise<string
       { role: "system", content: "You are a helpful assistant. Keep replies clear and concise." },
       ...recent,
     ],
-    max_tokens: 512,
+    max_completion_tokens: 512,
   });
 
-  if (
-    typeof result !== "object" ||
-    result === null ||
-    !("response" in result) ||
-    typeof result.response !== "string" ||
-    !result.response.trim()
-  ) {
+  const reply = result.choices[0]?.message.content?.trim();
+  if (!reply) {
     throw new Error("Workers AI returned no text");
   }
-  return result.response.trim();
+  return reply;
 }

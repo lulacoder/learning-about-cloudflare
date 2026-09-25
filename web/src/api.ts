@@ -38,11 +38,11 @@ export async function listChats(token: string): Promise<Chat[]> {
   return (await request<{ chats: Chat[] }>("/chats", token)).chats;
 }
 
-export async function createChat(token: string, title: string): Promise<Chat> {
-  return (await request<{ chat: Chat }>("/chats", token, {
+export async function createChat(token: string, content: string) {
+  return request<{ chat: Chat; user: Message; assistant: Message | null }>("/chats", token, {
     method: "POST",
-    body: JSON.stringify({ title }),
-  })).chat;
+    body: JSON.stringify({ content }),
+  });
 }
 
 export async function listMessages(token: string, chatId: string): Promise<Message[]> {

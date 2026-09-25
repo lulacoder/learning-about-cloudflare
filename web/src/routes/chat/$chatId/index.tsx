@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Aperture, ArrowLeft, ArrowUp, MessageCircle, RotateCw } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { Aperture, ArrowLeft, MessageCircle, RotateCw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError, chatSocket, listChats, listMessages, sendMessage, type Chat, type Message } from "../../../api";
 import { useAuth } from "../../../auth";
+import { ChatComposer } from "../../../chat-composer";
 
 export const Route = createFileRoute("/chat/$chatId/")({ component: ChatPage });
 
@@ -43,6 +44,14 @@ function ChatPage() {
     },
     onSettled: () => { void queryClient.invalidateQueries({ queryKey: ["messages", chatId] }); },
   });
+
+  useEffect(() => {
+    const savedNotice = queryClient.getQueryData<string>(["chat-notice", chatId]);
+    if (savedNotice) {
+      setNotice(savedNotice);
+      queryClient.removeQueries({ queryKey: ["chat-notice", chatId], exact: true });
+    }
+  }, [chatId, queryClient]);
 
   useEffect(() => {
     let active = true;
@@ -86,18 +95,10 @@ function ChatPage() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.data?.length, send.isPending]);
 
-  function submit(event?: FormEvent<HTMLFormElement>) {
-    event?.preventDefault();
+  function submit() {
     const content = draft.trim();
     if (!content || send.isPending) return;
     send.mutate(content);
-  }
-
-  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      submit();
-    }
   }
 
   return (
@@ -130,22 +131,7 @@ function ChatPage() {
         </div>
       </div>
 
-      <div className="composer-area">
-        {notice && <div className="chat-notice" role="alert">{notice}<button onClick={() => setNotice("")} aria-label="Dismiss">×</button></div>}
-        <form className="composer" onSubmit={submit}>
-          <textarea
-            aria-label="Message"
-            placeholder="Write a message..."
-            rows={2}
-            maxLength={10_000}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={onKeyDown}
-          />
-          <button type="submit" className="send-button" disabled={!draft.trim() || send.isPending} aria-label="Send message"><ArrowUp size={20} /></button>
-        </form>
-        <div className="composer-caption"><span>PRESS ENTER TO SEND · SHIFT + ENTER FOR A NEW LINE</span><span>POWERED BY WORKERS AI</span></div>
-      </div>
+      <ChatComposer draft={draft} onDraftChange={setDraft} onSend={submit} pending={send.isPending} notice={notice} onDismissNotice={() => setNotice("")} />
     </main>
   );
 }

@@ -2,10 +2,8 @@ import { createRootRoute, Link, Outlet, useRouterState } from "@tanstack/react-r
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Aperture, ArrowUpRight, KeyRound, Menu, MessageCircle, Plus, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { createPortal } from "react-dom";
 import { ApiError, listChats } from "../api";
 import { useAuth } from "../auth";
-import { useCreateChat } from "../chat-actions";
 
 export const Route = createRootRoute({ component: RootLayout });
 
@@ -81,26 +79,11 @@ function ConnectScreen() {
 function Sidebar({ close }: { close: () => void }) {
   const { token, disconnect } = useAuth();
   const queryClient = useQueryClient();
-  const create = useCreateChat();
-  const [newChatOpen, setNewChatOpen] = useState(false);
-  const [title, setTitle] = useState("");
   const chats = useQuery({ queryKey: ["chats"], queryFn: () => listChats(token) });
 
   function signOut() {
     queryClient.clear();
     disconnect();
-  }
-
-  function submitNewChat(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!title.trim()) return;
-    create.mutate(title.trim(), {
-      onSuccess: () => {
-        setNewChatOpen(false);
-        setTitle("");
-        close();
-      },
-    });
   }
 
   return (
@@ -110,12 +93,11 @@ function Sidebar({ close }: { close: () => void }) {
         <button className="mobile-close icon-button" aria-label="Close menu" onClick={close}><X size={19} /></button>
       </div>
       <div className="sidebar-intro">YOUR THINKING SPACE</div>
-      <button className="new-chat" onClick={() => setNewChatOpen(true)}>
+      <Link className="new-chat" to="/chat/new" onClick={close}>
         <span className="new-chat-icon"><Plus size={18} /></span>
         <span>New conversation</span>
         <ArrowUpRight size={16} className="new-chat-arrow" />
-      </button>
-      {create.isError && <p className="sidebar-error" role="alert">Could not create a chat. Try again.</p>}
+      </Link>
       <div className="sidebar-section-header"><span>RECENT CHATS</span><span>{chats.data?.length ?? 0}</span></div>
       <nav className="chat-nav" aria-label="Recent chats">
         {chats.isLoading && <p className="sidebar-muted">Loading conversations...</p>}
@@ -140,21 +122,6 @@ function Sidebar({ close }: { close: () => void }) {
         <div><strong>Local preview</strong><small>Connected to your Worker</small></div>
         <button className="text-button" onClick={signOut} title="Change token">Change</button>
       </div>
-      {newChatOpen && createPortal(
-        <div className="dialog-backdrop" onMouseDown={() => setNewChatOpen(false)}>
-          <form className="new-chat-dialog" role="dialog" aria-modal="true" aria-labelledby="new-chat-title" onMouseDown={(event) => event.stopPropagation()} onSubmit={submitNewChat}>
-            <button className="dialog-close icon-button" type="button" aria-label="Close" onClick={() => setNewChatOpen(false)}><X size={18} /></button>
-            <p className="card-kicker">A NEW PAGE</p>
-            <h2 id="new-chat-title">Name your conversation.</h2>
-            <p>Give it a title you will recognize later.</p>
-            <label htmlFor="chat-title">Conversation title</label>
-            <input id="chat-title" autoFocus maxLength={200} placeholder="What are we thinking about?" value={title} onChange={(event) => setTitle(event.target.value)} />
-            {create.isError && <p className="form-error" role="alert">Could not create a chat. Try again.</p>}
-            <button className="button button-primary" disabled={!title.trim() || create.isPending}>{create.isPending ? "Creating..." : "Start conversation"}<ArrowUpRight size={17} /></button>
-          </form>
-        </div>,
-        document.body,
-      )}
     </aside>
   );
 }

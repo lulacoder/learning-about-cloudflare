@@ -1,6 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Lightbulb, PenLine, Sparkles } from "lucide-react";
-import { useCreateChat } from "../chat-actions";
 
 export const Route = createFileRoute("/")({ component: HomePage });
 
@@ -11,8 +10,6 @@ const starters = [
 ];
 
 function HomePage() {
-  const create = useCreateChat();
-
   return (
     <main className="home-page">
       <div className="home-orbit" aria-hidden="true"><span /><span /></div>
@@ -23,16 +20,15 @@ function HomePage() {
         <div className="starter-label">PICK A PLACE TO BEGIN <span>↓</span></div>
         <div className="starter-grid">
           {starters.map(({ icon: Icon, title, detail }, index) => (
-            <button key={title} className="starter-card" disabled={create.isPending} onClick={() => create.mutate(title)}>
+            <Link key={title} className="starter-card" to="/chat/new">
               <span className="starter-index">0{index + 1}</span>
               <Icon size={25} strokeWidth={1.55} />
               <strong>{title}</strong>
               <small>{detail}</small>
               <ArrowRight size={17} className="starter-arrow" />
-            </button>
+            </Link>
           ))}
         </div>
-        {create.isError && <p className="form-error" role="alert">Could not start a conversation. Please try again.</p>}
       </div>
       <div className="home-footnote"><span>01 / OPEN A CONVERSATION</span><span>THE REST IS UP TO YOU</span></div>
     </main>

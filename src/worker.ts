@@ -41,11 +41,8 @@ export default {
       if (request.method === "GET") return json({ chats: await chats.listChats() });
       if (request.method === "POST") {
         const body = await request.json().catch(() => null);
-        if (
-          typeof body !== "object" || body === null || !("title" in body) ||
-          typeof body.title !== "string" || !body.title.trim() || body.title.length > 200
-        ) return error("A title of 1 to 200 characters is required", 400);
-        return json({ chat: await chats.createChat(body.title.trim()) }, 201);
+        if (!isMessageBody(body)) return error("Invalid message", 400);
+        return json(await chats.createChatWithMessage(body.content.trim()), 201);
       }
     }
 

@@ -11,6 +11,7 @@ export type Message = {
   created_at: number;
 };
 export type SendResult = { user: Message; assistant: Message | null };
+export type NewChatResult = SendResult & { chat: Chat };
 
 export class ChatStore extends DurableObject<WorkerEnv> {
   constructor(ctx: DurableObjectState, env: WorkerEnv) {
@@ -33,13 +34,28 @@ export class ChatStore extends DurableObject<WorkerEnv> {
     });
   }
 
-  createChat(title: string): Chat {
-    const chat = { id: crypto.randomUUID(), title, created_at: Date.now() };
-    this.ctx.storage.sql.exec(
-      "INSERT INTO chats (id, title, created_at) VALUES (?, ?, ?)",
-      chat.id, chat.title, chat.created_at,
-    );
-    return chat;
+  async createChatWithMessage(content: string): Promise<NewChatResult> {
+    const chat = {
+      id: crypto.randomUUID(),
+      title: content.trim().replace(/\s+/g, " ").slice(0, 200),
+      created_at: Date.now(),
+    };
+    const user = {
+      id: crypto.randomUUID(), chat_id: chat.id, role: "user" as const,
+      content, created_at: Date.now(),
+    };
+    this.ctx.storage.transactionSync(() => {
+      this.ctx.storage.sql.exec(
+        "INSERT INTO chats (id, title, created_at) VALUES (?, ?, ?)",
+        chat.id, chat.title, chat.created_at,
+      );
+      this.ctx.storage.sql.exec(
+        "INSERT INTO messages (id, chat_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)",
+        user.id, user.chat_id, user.role, user.content, user.created_at,
+      );
+    });
+    const assistant = await this.replyToChat(chat.id);
+    return { chat, user, assistant };
   }
 
   listChats(): Chat[] {
@@ -67,16 +83,20 @@ export class ChatStore extends DurableObject<WorkerEnv> {
     if (!this.getChat(chatId)) return null;
 
     const user = this.insertMessage(chatId, "user", content);
+    const assistant = await this.replyToChat(chatId);
+    return { user, assistant };
+  }
+
+  private async replyToChat(chatId: string): Promise<Message | null> {
     let reply: string;
     try {
       reply = await generateReply(this.env.AI, this.listMessages(chatId));
     } catch (cause) {
       console.error("Workers AI request failed", cause);
       this.broadcast(chatId, { type: "assistant_error", error: "Assistant unavailable" });
-      return { user, assistant: null };
+      return null;
     }
-    const assistant = this.insertMessage(chatId, "assistant", reply);
-    return { user, assistant };
+    return this.insertMessage(chatId, "assistant", reply);
   }
 
   async fetch(request: Request): Promise<Response> {

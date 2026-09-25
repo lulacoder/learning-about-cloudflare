@@ -1,6 +1,6 @@
 # Stillroom local preview
 
-The frontend lives in `web/`. It uses React, TanStack Router, and TanStack Query. Routes follow the folder convention: `web/src/routes/index.tsx` is the home page, and `web/src/routes/chat/$chatId/index.tsx` is a conversation page.
+The frontend lives in `web/`. It uses React, TanStack Router, and TanStack Query. Routes follow the folder convention: `web/src/routes/index.tsx` is the home page, `web/src/routes/chat/new/index.tsx` starts a conversation, and `web/src/routes/chat/$chatId/index.tsx` shows a saved conversation. A chat is saved when its first message is sent, using that message as its title.
 
 ## Run locally
 
