@@ -13,17 +13,18 @@ function NewChatPage() {
   const [draft, setDraft] = useState("");
   const create = useMutation({
     mutationFn: createChat,
-    onSuccess: ({ chat, user, assistant }) => {
+    onSuccess: ({ chat, user }) => {
       queryClient.setQueryData<Chat[]>(["chats"], (current = []) => [chat, ...current]);
-      queryClient.setQueryData<Message[]>(["messages", chat.id], assistant ? [user, assistant] : [user]);
-      if (!assistant) queryClient.setQueryData(["chat-notice", chat.id], "Your message was saved, but the assistant could not reply.");
+      queryClient.setQueryData<Message[]>(["messages", chat.id], [user]);
       void navigate({ to: "/chat/$chatId", params: { chatId: chat.id } });
     },
+    onError: (_error, content) => setDraft((current) => current || content),
   });
 
   function send() {
     const content = draft.trim();
     if (!content || create.isPending) return;
+    setDraft("");
     create.mutate(content);
   }
 
@@ -40,7 +41,15 @@ function NewChatPage() {
       <div className="message-scroll">
         <div className="message-list">
           {create.isPending ? (
-            <div className="loading-state"><RotateCw size={18} className="spin" /> Starting conversation...</div>
+            <>
+              <div className="message-row user">
+                <div className="message-content">
+                  <span className="message-author">YOU</span>
+                  <div className="message-text">{create.variables}</div>
+                </div>
+              </div>
+              <div className="thinking"><RotateCw size={15} className="spin" /> Saving your message...</div>
+            </>
           ) : (
             <div className="empty-messages">
               <div className="empty-messages-icon"><Aperture size={29} /></div>
