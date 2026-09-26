@@ -19,21 +19,12 @@ function ChatPage() {
   const [socketStatus, setSocketStatus] = useState<"connecting" | "live" | "offline">("connecting");
   const [notice, setNotice] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
-  const chats = useQuery({
-    queryKey: ["chats"],
-    queryFn: listChats,
-    refetchInterval: (query) => query.state.data?.some((item) => item.id === chatId && item.reply_status === "pending") ? 3000 : false,
-  });
+  const chats = useQuery({ queryKey: ["chats"], queryFn: listChats });
   const chat = chats.data?.find((item: Chat) => item.id === chatId);
   const messages = useQuery({
     queryKey: ["messages", chatId],
     queryFn: () => listMessages(chatId),
   });
-  useEffect(() => {
-    if (chat && chat.reply_status !== "pending") {
-      void queryClient.invalidateQueries({ queryKey: ["messages", chatId] });
-    }
-  }, [chat?.reply_status, chatId, queryClient]);
   const send = useMutation({
     mutationFn: (content: string) => sendMessage(chatId, content),
     onSuccess: ({ user }) => {

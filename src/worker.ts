@@ -1,6 +1,5 @@
 import type { WorkerEnv } from "../alchemy.run.ts";
 import { createAuth } from "./auth.ts";
-import { isMessageBody } from "./chat-store.ts";
 
 // The Durable Object class must be exported by the Worker's entry module.
 export { ChatStore } from "./chat-store.ts";
@@ -10,6 +9,14 @@ const json = (body: unknown, status = 200) => Response.json(body, {
   headers: { "Cache-Control": "no-store" },
 });
 const error = (message: string, status: number) => json({ error: message }, status);
+
+function isMessageBody(value: unknown): value is { content: string } {
+  return (
+    typeof value === "object" && value !== null && "content" in value &&
+    typeof value.content === "string" && value.content.trim().length > 0 &&
+    value.content.length <= 10_000
+  );
+}
 
 function allowedOrigin(request: Request, env: WorkerEnv, required = false): boolean {
   const origin = request.headers.get("Origin");
