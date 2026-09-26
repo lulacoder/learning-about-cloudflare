@@ -19,37 +19,41 @@ function ChatPage() {
   const [socketStatus, setSocketStatus] = useState<"connecting" | "live" | "offline">("connecting");
   const [notice, setNotice] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
-  const chats = useQuery({ queryKey: ["chats"], queryFn: listChats });
+  const chats = useQuery({
+    queryKey: ["chats"],
+    queryFn: listChats,
+    refetchInterval: (query) => query.state.data?.some((item) => item.id === chatId && item.reply_status === "pending") ? 3000 : false,
+  });
   const chat = chats.data?.find((item: Chat) => item.id === chatId);
   const messages = useQuery({
     queryKey: ["messages", chatId],
     queryFn: () => listMessages(chatId),
   });
+  useEffect(() => {
+    if (chat && chat.reply_status !== "pending") {
+      void queryClient.invalidateQueries({ queryKey: ["messages", chatId] });
+    }
+  }, [chat?.reply_status, chatId, queryClient]);
   const send = useMutation({
     mutationFn: (content: string) => sendMessage(chatId, content),
-    onSuccess: ({ user, assistant }) => {
+    onSuccess: ({ user }) => {
       queryClient.setQueryData<Message[]>(["messages", chatId], (current) =>
-        addMessage(addMessage(current, user), assistant),
+        addMessage(current, user),
       );
-      setDraft("");
+      queryClient.setQueryData<Chat[]>(["chats"], (current) =>
+        current?.map((item) => item.id === chatId ? { ...item, reply_status: "pending" } : item),
+      );
       setNotice("");
+      void queryClient.invalidateQueries({ queryKey: ["chats"] });
     },
-    onError: (error) => {
-      setNotice(error instanceof ApiError && error.status === 502
-        ? "Your message was saved, but the assistant could not reply."
+    onError: (error, content) => {
+      setDraft((current) => current || content);
+      setNotice(error instanceof ApiError && error.status === 409
+        ? "Wait for the current reply before sending another message."
         : "Message not sent. Please try again.");
-      if (error instanceof ApiError && error.status === 502) setDraft("");
     },
     onSettled: () => { void queryClient.invalidateQueries({ queryKey: ["messages", chatId] }); },
   });
-
-  useEffect(() => {
-    const savedNotice = queryClient.getQueryData<string>(["chat-notice", chatId]);
-    if (savedNotice) {
-      setNotice(savedNotice);
-      queryClient.removeQueries({ queryKey: ["chat-notice", chatId], exact: true });
-    }
-  }, [chatId, queryClient]);
 
   useEffect(() => {
     let active = true;
@@ -63,14 +67,17 @@ function ChatPage() {
         if (!active) return;
         setSocketStatus("live");
         void queryClient.invalidateQueries({ queryKey: ["messages", chatId] });
+        void queryClient.invalidateQueries({ queryKey: ["chats"] });
       });
       socket.addEventListener("message", (event) => {
         if (!active) return;
         try {
           const data: unknown = JSON.parse(String(event.data));
           if (typeof data !== "object" || data === null || !("type" in data)) return;
-          if (data.type === "message") void queryClient.invalidateQueries({ queryKey: ["messages", chatId] });
-          if (data.type === "assistant_error") setNotice("The assistant could not reply. Your message is saved.");
+          if (data.type === "message" || data.type === "assistant_error") {
+            void queryClient.invalidateQueries({ queryKey: ["messages", chatId] });
+            void queryClient.invalidateQueries({ queryKey: ["chats"] });
+          }
         } catch { /* Ignore malformed socket events. */ }
       });
       socket.addEventListener("close", () => {
@@ -92,7 +99,8 @@ function ChatPage() {
 
   function submit() {
     const content = draft.trim();
-    if (!content || send.isPending) return;
+    if (!content || send.isPending || chat?.reply_status === "pending") return;
+    setDraft("");
     send.mutate(content);
   }
 
@@ -121,12 +129,13 @@ function ChatPage() {
               </div>
             </div>
           ))}
-          {send.isPending && <div className="thinking"><span className="thinking-dots"><i /><i /><i /></span> Thinking through your message...</div>}
+          {(send.isPending || chat?.reply_status === "pending") && <div className="thinking"><span className="thinking-dots"><i /><i /><i /></span> Thinking through your message...</div>}
+          {chat?.reply_status === "error" && <div className="reply-error" role="alert">The assistant could not reply. Your message is saved.</div>}
           <div ref={bottomRef} />
         </div>
       </div>
 
-      <ChatComposer draft={draft} onDraftChange={setDraft} onSend={submit} pending={send.isPending} notice={notice} onDismissNotice={() => setNotice("")} />
+      <ChatComposer draft={draft} onDraftChange={setDraft} onSend={submit} pending={send.isPending || chat?.reply_status === "pending"} notice={notice} onDismissNotice={() => setNotice("")} />
     </main>
   );
 }

@@ -157,6 +157,7 @@ a { color: inherit; text-decoration: none; }
 .thinking-dots i { width: 5px; height: 5px; border-radius: 50%; background: #7da282; animation: pulse 1s infinite alternate; }
 .thinking-dots i:nth-child(2) { animation-delay: .2s; }
 .thinking-dots i:nth-child(3) { animation-delay: .4s; }
+.reply-error { margin-left: 49px; color: #a5543e; font-size: 12px; }
 .composer-area { flex: 0 0 auto; padding: 15px clamp(28px, 4.5vw, 72px) 22px; border-top: 1px solid #e4e6dd; background: #faf8f1; }
 .composer { display: flex; align-items: flex-end; gap: 14px; width: min(750px, 100%); margin: 0 auto; padding: 12px 12px 12px 18px; border: 1px solid #d8e0d4; border-radius: 7px; background: #fff; box-shadow: 0 9px 25px rgba(40, 60, 43, .04); }
 .composer:focus-within { border-color: #91aa8e; box-shadow: 0 0 0 3px #e3eee0; }

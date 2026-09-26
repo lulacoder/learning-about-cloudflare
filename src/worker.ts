@@ -56,9 +56,8 @@ export default {
         if (!isMessageBody(body)) return error("Invalid message", 400);
         const result = await chats.sendMessage(userId, chatId, body.content);
         if (!result) return error("Chat not found", 404);
-        return result.assistant
-          ? json({ user: result.user, assistant: result.assistant }, 201)
-          : json({ error: "Assistant unavailable", user: result.user }, 502);
+        if (result === "pending") return error("Wait for the current reply", 409);
+        return json({ user: result }, 201);
       }
     }
 
