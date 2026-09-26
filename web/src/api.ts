@@ -1,9 +1,4 @@
-export type Chat = {
-  id: string;
-  title: string;
-  created_at: number;
-  reply_status: "idle" | "pending" | "error";
-};
+export type Chat = { id: string; title: string; created_at: number };
 export type Message = {
   id: string;
   chat_id: string;
@@ -45,7 +40,7 @@ export async function listChats(): Promise<Chat[]> {
 }
 
 export async function createChat(content: string) {
-  return request<{ chat: Chat; user: Message }>("/chats", {
+  return request<{ chat: Chat; user: Message; assistant: Message | null }>("/chats", {
     method: "POST",
     body: JSON.stringify({ content }),
   });
@@ -58,7 +53,7 @@ export async function listMessages(chatId: string): Promise<Message[]> {
 }
 
 export async function sendMessage(chatId: string, content: string) {
-  return request<{ user: Message }>(
+  return request<{ user: Message; assistant: Message }>(
     `/chats/${encodeURIComponent(chatId)}/messages`,
     { method: "POST", body: JSON.stringify({ content }) },
   );

@@ -20,7 +20,6 @@ export async function generateReply(ai: Ai, history: ChatTurn[]): Promise<string
       ...recent,
     ],
     max_completion_tokens: 512,
-    chat_template_kwargs: { enable_thinking: false },
   });
 
   const reply = result.choices[0]?.message.content?.trim();
